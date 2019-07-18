@@ -1,6 +1,7 @@
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
+import javax.sound.sampled.LineUnavailableException;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.GroupLayout;
@@ -18,6 +19,7 @@ import org.jfree.data.time.TimeSeriesCollection;
 import org.jfree.data.xy.XYDataset;
 
 import com.jgoodies.forms.layout.FormLayout;
+import java.awt.Toolkit;
 import com.sun.xml.internal.ws.wsdl.writer.document.Message;
 
 import java.awt.BorderLayout;
@@ -52,6 +54,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.JMenuBar;
+import javax.swing.JMenu;
 
 public class Main_Display {
 
@@ -98,8 +102,8 @@ public class Main_Display {
 	private static Thread th_insulin_progress;
 	private static GlucagonUnitProgress glucagon_progress;
 	private static Thread th_glucagon_progress;
-
-
+	private static MessageAlert msg_alert;
+	
 	
 	private static String thread_Status="initial";
 	private static boolean batery_status=true;
@@ -114,6 +118,8 @@ public class Main_Display {
 				try {
 					window = new Main_Display();
 					window.frame.setVisible(true);	
+					
+					msg_alert=new MessageAlert(); 
 					
 					batery = window.new BatteryProgress();
 					th_batery = new Thread(batery);
@@ -156,6 +162,18 @@ public class Main_Display {
 		});
 		
 	}
+		
+	
+	public void clearMsgDisplay() {
+		
+		try {
+			Thread.currentThread().sleep(10000);
+		} catch (InterruptedException e) {		
+			e.printStackTrace();
+		}
+		txtMsgDisplay.setText("");
+	}
+	
 	
 	public void setBateryStatus(boolean status) {		//status is either 1 (up) or 0 (down )
 		batery_status = status;
@@ -179,6 +197,25 @@ public class Main_Display {
 				
 				thread_Status="start";
 				txtMsgDisplay.setText("Machine has started!!");
+				
+				int i=0;
+				for (i=0;i<3;i++) {
+					
+
+						try {
+							msg_alert.tone(1000,100);							
+						} catch (LineUnavailableException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}					
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}									
+				}
+								
 			}
 			else if (thread_Status=="stop") {
 				//th_batery.resume();
@@ -190,6 +227,27 @@ public class Main_Display {
 				th_Chart.resume();
 				txtMsgDisplay.setText("Machine has resumed!!");
 				thread_Status="resume";
+				
+				
+				int i=0;
+				for (i=0;i<3;i++) {
+					
+
+						try {
+							msg_alert.tone(1000,100);	//restart
+						} catch (LineUnavailableException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}					
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}									
+				}
+					
+				
 			}
 		}
 		
@@ -205,6 +263,26 @@ public class Main_Display {
 			
 			txtMsgDisplay.setText("Machine has stoped!!");
 			thread_Status="stop";
+			
+			int i=0;
+			for (i=0;i<3;i++) {
+				
+
+					try {
+						msg_alert.tone(400,500,2); //use for low battery
+					} catch (LineUnavailableException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}					
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}									
+			}
+				
+			
 		}
 	}
 	
@@ -227,11 +305,12 @@ public class Main_Display {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
 		frame.setLocationRelativeTo(null);
+//		frame.setUndecorated(true);
 		
 		lblClock = new JLabel("");
 		lblClock.setForeground(new Color(165, 42, 42));
 		lblClock.setFont(new Font("Tahoma", Font.BOLD, 40));
-		lblClock.setBounds(302, 11, 185, 69);
+		lblClock.setBounds(303, 15, 185, 69);
 		frame.getContentPane().add(lblClock);
 		
 		pgGlucagon = new JProgressBar();
@@ -254,12 +333,12 @@ public class Main_Display {
 		pgBattery.setBackground(Color.WHITE);
 		pgBattery.setPreferredSize(new Dimension(50, 14));
 		pgBattery.setForeground(Color.DARK_GRAY);
-		pgBattery.setBounds(19, 11, 50, 14);
+		pgBattery.setBounds(21, 11, 50, 14);
 		frame.getContentPane().add(pgBattery);
 		
 		lblOfBattery = new JLabel("%");
 		lblOfBattery.setHorizontalAlignment(SwingConstants.RIGHT);
-		lblOfBattery.setBounds(19, 25, 50, 14);
+		lblOfBattery.setBounds(21, 25, 50, 14);
 		frame.getContentPane().add(lblOfBattery);
 		
 		lblOfInsulin = new JLabel("300");
@@ -378,6 +457,9 @@ public class Main_Display {
 						BGL_Generator.setStartBGL(val);
 						th_BGL = new Thread(BGL_Generator);		
 						th_BGL.start();	
+						
+						
+						
 					}
 						
 				}
@@ -387,7 +469,7 @@ public class Main_Display {
 				}											
 			}
 		});
-		btnApplyBGL.setBounds(752, 22, 31, 30);
+		btnApplyBGL.setBounds(752, 15, 31, 30);
 		frame.getContentPane().add(btnApplyBGL);
 		
 		btnRechargeBatery = new JButton("");
@@ -404,36 +486,38 @@ public class Main_Display {
 				th_batery.start();
 				
 				setBateryStatus(true);
+				batery.setAlert(false);
 				txtMsgDisplay.setText("Batery has recharged.");
+				
 			}
 		});
 		btnRechargeBatery.setMargin(new Insets(0, 0, 0, 0));
 		btnRechargeBatery.setMinimumSize(new Dimension(30, 25));
 		btnRechargeBatery.setMaximumSize(new Dimension(30, 25));
 		btnRechargeBatery.setIcon(new ImageIcon("D:\\HIS\\SS 19\\SCS\\Project\\Application\\img\\rechrg.png"));
-		btnRechargeBatery.setBounds(79, 11, 31, 30);
+		btnRechargeBatery.setBounds(81, 11, 31, 30);
 		frame.getContentPane().add(btnRechargeBatery);
 		
 		txtBGLValue = new JTextField();
 		txtBGLValue.setFont(new Font("Tahoma", Font.BOLD, 14));
-		txtBGLValue.setBounds(698, 22, 50, 30);
+		txtBGLValue.setBounds(698, 15, 50, 30);
 		frame.getContentPane().add(txtBGLValue);
 		txtBGLValue.setColumns(10);
 		
 		lblSetBgl = new JLabel("Set Blood Glucose");
 		lblSetBgl.setFont(new Font("Tahoma", Font.BOLD, 14));
-		lblSetBgl.setBounds(561, 25, 137, 27);
+		lblSetBgl.setBounds(561, 18, 137, 27);
 		frame.getContentPane().add(lblSetBgl);
 		
 		lblCarbohydrate = new JLabel("Carbohydrate (gm)");
 		lblCarbohydrate.setFont(new Font("Tahoma", Font.BOLD, 14));
-		lblCarbohydrate.setBounds(561, 65, 137, 27);
+		lblCarbohydrate.setBounds(561, 59, 137, 27);
 		frame.getContentPane().add(lblCarbohydrate);
 		
 		textCarb = new JTextField();
 		textCarb.setFont(new Font("Tahoma", Font.BOLD, 14));
 		textCarb.setColumns(10);
-		textCarb.setBounds(698, 62, 50, 30);
+		textCarb.setBounds(698, 56, 50, 30);
 		frame.getContentPane().add(textCarb);
 		
 		btnApplyCarb = new JButton("");
@@ -458,6 +542,7 @@ public class Main_Display {
 							insulin_pump.setCarbQTY(val);
 							th_insulin = new Thread(insulin_pump);
 							th_insulin.start();
+							
 						}
 					}		
 				}
@@ -470,7 +555,7 @@ public class Main_Display {
 		});
 		btnApplyCarb.setIcon(new ImageIcon("D:\\HIS\\SS 19\\SCS\\Project\\Application\\img\\apply.png"));
 		btnApplyCarb.setMargin(new Insets(0, 0, 0, 0));
-		btnApplyCarb.setBounds(752, 62, 31, 30);
+		btnApplyCarb.setBounds(752, 56, 31, 30);
 		frame.getContentPane().add(btnApplyCarb);
 		
 		btnStart = new JButton("");
@@ -481,7 +566,7 @@ public class Main_Display {
 			}
 		});
 		btnStart.setIcon(new ImageIcon("D:\\HIS\\SS 19\\SCS\\Project\\Application\\img\\start_button.png"));
-		btnStart.setBounds(20, 68, 50, 42);
+		btnStart.setBounds(21, 52, 50, 42);
 		frame.getContentPane().add(btnStart);
 		
 		btnStop = new JButton("");
@@ -491,26 +576,49 @@ public class Main_Display {
 				StopMachine();
 			}
 		});
-		btnStop.setBounds(80, 68, 50, 42);
+		btnStop.setBounds(81, 52, 50, 42);
 		frame.getContentPane().add(btnStop);
+		
+		
 	}
 
 	
 	//Battery Progress bar thread class
 	class BatteryProgress implements Runnable{
 
-		@Override
+
+		boolean alert=false;
+		
 		public void run() {
 			for(int i=100;i>=0;i--) {
 				pgBattery.setValue(i);
 				lblOfBattery.setText(i + "%");
 				if (i<30) {
 					txtMsgDisplay.setText("Batery is low. Please recharge it as soon as possible to avoid machine shut down.");
+					
+					int j=0;
+					if(!getAlert()) {
+						for (j=0;j<3;j++) {						
+							try {
+								msg_alert.tone(400,500,2); //use for low battery
+								setAlert(true);
+							} catch (LineUnavailableException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}					
+							try {
+								Thread.sleep(1000);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}									
+						}
+					}					
 				}
 				
 				if(i==0) {
 					StopMachine();					
-					txtMsgDisplay.setText("Batery charge is empty!!! Recharge it to start the machine.");
+					txtMsgDisplay.setText("Batery charge is empty!!! Recharge it to start the machine.");					
 					setBateryStatus(false);
 				}
 				
@@ -520,7 +628,14 @@ public class Main_Display {
 					e.printStackTrace();
 				}
 			}
-		}			
+		}	
+		
+		public void setAlert(boolean alert) {
+			this.alert=alert;
+		}
+		public boolean getAlert() {
+			return this.alert;
+		}
 		
 	}
 	
@@ -541,13 +656,25 @@ public class Main_Display {
 				lblOfInsulin.setText(Integer.toString(currentInsulinUnit));
 				if (qtyInsulinPushed>0) {
 					txtMsgDisplay.setText(Integer.toString(qtyInsulinPushed) + " unit of Insulin pushed");
-//					try {
-//						Thread.currentThread().sleep(10000);
-//					} catch (InterruptedException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
-//					txtMsgDisplay.setText("");
+					
+					/*Sound alert*/
+					
+					try {
+						msg_alert.tone(1000,100);							
+					} catch (LineUnavailableException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}					
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}									
+											
+					/*alert end*/
+					
+
 				}
 				try {
 					java.lang.Thread.sleep(1000);
@@ -591,6 +718,23 @@ public class Main_Display {
 				lblOfGlucagon.setText(Integer.toString(currentGlucagonUnit));
 				if (qtyGlucagonPushed>0) {
 					txtMsgDisplay.setText(Integer.toString(qtyGlucagonPushed) + " unit of Glucagon pushed");
+					
+					/*Sound alert*/
+					
+					try {
+						msg_alert.tone(1000,100);							
+					} catch (LineUnavailableException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}					
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}									
+											
+					/*alert end*/
 				}
 				try {
 					java.lang.Thread.sleep(1000);
@@ -616,7 +760,6 @@ public class Main_Display {
 			return currentGlucagonUnit;
 		}					
 	}
-	
 	
 	
 	//Clock thread class

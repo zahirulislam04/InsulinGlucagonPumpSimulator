@@ -96,7 +96,7 @@ public class InsulinGlucagonPump implements Runnable {
 				//Low Blood Sugar detection and Glucagon pumping
 				if (currBGL<minBGL) {				
 					setGlucagonPushed(false);
-					System.out.println(BGL.getTargetBGL());
+//					System.out.println(BGL.getTargetBGL());
 					if(!getGlucagonPushed()) {
 						dose=(BGL.getTargetBGL()-currBGL)/getGlucagonSensitivityFactor();
 //						if(getInsulinRemainingDose()-dose<0) {
